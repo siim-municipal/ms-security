@@ -1,0 +1,44 @@
+services:
+  ms-security:
+    # Build: usa el Dockerfile del directorio actual
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    # Nombre del contenedor interno
+    container_name: ms-security-app
+
+    # Reiniciar siempre si falla
+    restart: always
+
+    # Puertos: Mapeamos el interno 8080.
+    # Dokploy se encargará de exponerlo al mundo vía Traefik si lo configuras en "Domains"
+    ports:
+      - "8081:8080"
+
+    # Variables de Entorno
+    # NO pongas contraseñas reales aquí. Usa la sintaxis ${VAR}
+    # y configura los valores reales en la pestaña "Environment" de Dokploy.
+    environment:
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=dev
+      # Conexión DB
+      - URL_BD_PADRON=${URL_BD_PADRON}
+      - USER_NAME_BD=${USER_NAME_BD}
+      - PASSWORD_BD=${PASSWORD_BD}
+      # Seguridad Keycloak
+      - ISSUER_URI_PADRON=${ISSUER_URI_PADRON}
+      - JWK_SET_URI_PADRON=${JWK_SET_URI_PADRON}
+      # Postgres y Hibernate
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+
+    # Configuración de red (opcional, pero buena práctica)
+    networks:
+      - siim-network
+
+# Definimos la red
+networks:
+  siim-network:
+    name: siim-global-net
+    external: true
