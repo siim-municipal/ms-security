@@ -1,0 +1,53 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <property name="schemaName" value="security_tuxtepec"/>
+    <property name="now" value="now()" dbms="postgresql"/>
+
+    <changeSet id="20240101-KC-001" author="hugo cobos">
+        <createSequence sequenceName="seq_user_bindings" schemaName="${schemaName}" startValue="1" incrementBy="1"/>
+    </changeSet>
+
+    <changeSet id="20240101-KC-002" author="hugo cobos">
+        <createTable tableName="users" schemaName="${schemaName}">
+            <column name="id" type="BIGINT" defaultValueComputed="nextval('${schemaName}.seq_user_bindings')">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="keycloak_user_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="username" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="first_name" type="VARCHAR(100)"/>
+            <column name="last_name" type="VARCHAR(100)"/>
+
+            <column name="municipality_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="synced_at" type="TIMESTAMP" defaultValueComputed="${now}"/>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="users"
+                schemaName="${schemaName}"
+                columnNames="keycloak_user_id, municipality_id"
+                constraintName="uk_keycloak_municipality"/>
+
+        <createIndex tableName="users" schemaName="${schemaName}" indexName="idx_users_keycloak_id">
+            <column name="keycloak_user_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
