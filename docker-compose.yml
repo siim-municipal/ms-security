@@ -19,14 +19,11 @@ services:
       - SPRING_PROFILES_ACTIVE=dev
       # Conexión DB
       - URL_BD_SECURITY=${URL_BD_SECURITY}
-      - USER_NAME_BD=${USER_NAME_BD}
-      - PASSWORD_BD=${PASSWORD_BD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       # Seguridad Keycloak
-      - ISSUER_URI_SECURITY=${ISSUER_URI_SECURITY}
-      - JWK_SET_URI_SECURITY=${JWK_SET_URI_SECURITY}
-      # Postgres y Hibernate
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
-      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - ISSUER_URI_KEYCLOACK=${ISSUER_URI_KEYCLOACK}
+      - JWK_SET_URI_KEYCLOACK=${JWK_SET_URI_SECURITY}
 
     # Configuración de red (opcional, pero buena práctica)
     networks:
