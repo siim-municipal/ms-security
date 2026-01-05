@@ -8,7 +8,7 @@
 
     <changeSet id="000-init-schema" author="Hugo Cobos" dbms="h2">
         <sql>
-            CREATE SCHEMA IF NOT EXISTS "SECURITY_TUXTEPEC";
+            CREATE SCHEMA IF NOT EXISTS "USERS_TUXTEPEC";
         </sql>
     </changeSet>
 
@@ -18,12 +18,12 @@
                 <sqlCheck expectedResult="1">
                     SELECT COUNT(*)
                     FROM information_schema.schemata
-                    WHERE schema_name = 'security_tuxtepec'
+                    WHERE schema_name = 'users_tuxtepec'
                 </sqlCheck>
             </not>
         </preConditions>
 
-        <sql>CREATE SCHEMA security_tuxtepec;</sql>
+        <sql>CREATE SCHEMA users_tuxtepec;</sql>
     </changeSet>
 
 </databaseChangeLog>

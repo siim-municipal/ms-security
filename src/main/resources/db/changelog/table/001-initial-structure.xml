@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
 
-    <property name="schemaName" value="security_tuxtepec"/>
+    <property name="schemaName" value="users_tuxtepec"/>
     <property name="now" value="now()" dbms="postgresql"/>
 
     <changeSet id="20240101-KC-001" author="hugo cobos">

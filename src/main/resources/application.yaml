@@ -2,14 +2,14 @@ spring:
   application:
     name: ms-security
   datasource:
-    url: ${URL_BD_SECURITY:jdbc:postgresql://192.168.0.18:5432/municipal_security?currentSchema=security_tuxtepec}
+    url: ${URL_BD_SECURITY:jdbc:postgresql://192.168.0.18:5432/municipal_security?currentSchema=${SCHEMA_NAME}}
     username: ${POSTGRES_USER:postgres}
     password: ${POSTGRES_PASSWORD:Abc12345}
     driver-class-name: org.postgresql.Driver
 
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
-    default-schema: security_tuxtepec
+    default-schema: ${SCHEMA_NAME}
     liquibase-schema: public
 
   jpa:
@@ -17,16 +17,16 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
-        default_schema: security_tuxtepec
+        default_schema: ${SCHEMA_NAME}
         format_sql: true
     show-sql: ${SHOW_SQL:true}
 
-    security:
-      oauth2:
-        resourceserver:
-          jwt:
-            issuer-uri: ${ISSUER_URI_KEYCLOACK:http://localhost:8180/realms/tuxtepec-gob}
-            jwk-set-uri: ${JWK_SET_URI_KEYCLOACK:http://localhost:8180/realms/tuxtepec-gob/protocol/openid-connect/certs}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ISSUER_URI_KEYCLOAK:http://localhost:8180/realms/tuxtepec-gob}
+          jwk-set-uri: ${JWK_SET_URI_KEYCLOAK:http://keycloak:8180/realms/tuxtepec-gob/protocol/openid-connect/certs}
 
   logging:
     level:
