@@ -30,12 +30,12 @@ jobs:
           fail-on-severity: moderate
 
           # Evita licencias problemáticas en entornos comerciales
-          deny-licenses:
-            - GPL-1.0-or-later
-            - GPL-2.0-or-later
-            - GPL-3.0-or-later
-            - LGPL-2.0-or-later
-            - LGPL-3.0-or-later
+          deny-licenses: |
+            GPL-1.0-or-later
+            GPL-2.0-or-later
+            GPL-3.0-or-later
+            LGPL-2.0-or-later
+            LGPL-3.0-or-later
 
           # Reduce falsos positivos con snapshots
           retry-on-snapshot-warnings: true
