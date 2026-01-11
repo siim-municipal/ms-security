@@ -28,6 +28,8 @@ services:
       - ISSUER_URI_KEYCLOAK=${ISSUER_URI_KEYCLOAK}
       - JWK_SET_URI_KEYCLOAK=${ISSUER_URI_KEYCLOAK}
 
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
+
     # Configuración de red (opcional, pero buena práctica)
     networks:
       - siim-network
