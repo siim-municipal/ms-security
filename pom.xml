@@ -16,6 +16,7 @@
 	<description>auth-microservices</description>
 	<properties>
 		<java.version>21</java.version>
+		<keycloak.version>26.0.7</keycloak.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -72,6 +73,21 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
 			<version>4.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-admin-client</artifactId>
+			<version>26.0.7</version>
+		</dependency>
+		<dependency>
+			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-core</artifactId>
+			<version>${keycloak.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-common</artifactId>
+			<version>${keycloak.version}</version>
 		</dependency>
 	</dependencies>
 
