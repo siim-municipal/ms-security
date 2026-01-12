@@ -33,3 +33,7 @@ spring:
       org.springframework.security: DEBUG
       org.springframework.web: INFO
       liquibase: INFO
+
+app:
+  security:
+    client-id: ${KEYCLOAK_CLIENT_ID:siim-frontend}
