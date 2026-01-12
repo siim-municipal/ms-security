@@ -1,83 +1,75 @@
 package com.tuxoftware.ms_security.config;
 
-import com.tuxoftware.ms_security.dto.ErrorDTO;
-import jakarta.persistence.EntityNotFoundException;
+
+import com.tuxoftware.ms_security.dto.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
-    // 1. Manejar IllegalArgumentException (Como tu error de Clave Duplicada)
-    // Devolvemos 400 Bad Request
+    /**
+     * Captura IllegalArgumentException.
+     * Casos: Password débil, Roles inválidos, Usuario ya existente (según tu lógica actual).
+     * Retorna: 400 Bad Request
+     */
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorDTO> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
-        ErrorDTO error = ErrorDTO.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Invalid Argument")
-                .message(ex.getMessage())
-                .path(request.getRequestURI())
-                .build();
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException e, HttpServletRequest request) {
+        log.warn("Error de validación: {}", e.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request);
     }
 
-    // 2. Manejar EntityNotFoundException (Cuando no encuentras al dueño)
-    // Devolvemos 404 Not Found
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ErrorDTO> handleNotFound(EntityNotFoundException ex, HttpServletRequest request) {
-        ErrorDTO error = ErrorDTO.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.NOT_FOUND.value())
-                .error("Not Found")
-                .message(ex.getMessage())
-                .path(request.getRequestURI())
-                .build();
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    /**
+     * Captura Excepciones de Keycloak (NotFound).
+     * Caso: Intentar asignar un rol que no existe (si Keycloak lo reporta directo).
+     * Retorna: 404 Not Found
+     */
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException e, HttpServletRequest request) {
+        log.warn("Recurso no encontrado: {}", e.getMessage());
+        return buildResponse(HttpStatus.NOT_FOUND, "Recurso no encontrado en el proveedor de identidad", request);
     }
 
-    // 3. Manejar Validaciones (@NotNull, @NotBlank, etc.)
-    // Devolvemos 400 y la lista de campos fallidos
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorDTO> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-
-        ErrorDTO error = ErrorDTO.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Validation Error")
-                .message(errors.toString()) // Devolvemos el mapa de errores como texto
-                .path(request.getRequestURI())
-                .build();
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    /**
+     * Captura Excepciones de Keycloak (BadRequest).
+     * Caso: Errores nativos de Keycloak.
+     * Retorna: 400 Bad Request
+     */
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleKcBadRequest(BadRequestException e, HttpServletRequest request) {
+        log.error("Error en petición a Keycloak: {}", e.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, "Error procesando la solicitud en Keycloak", request);
     }
 
-    // 4. Manejar cualquier otro error no controlado (El 500 genérico)
+    /**
+     * Fallback General (Cualquier otra cosa).
+     * Caso: NullPointer, Fallo de Red, Keycloak caído.
+     * Retorna: 500 Internal Server Error
+     */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorDTO> handleGeneralException(Exception ex, HttpServletRequest request) {
-        ErrorDTO error = ErrorDTO.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .error("Internal Server Error")
-                .message("Ocurrió un error inesperado en el servidor") // No mostramos el error técnico por seguridad
-                .path(request.getRequestURI())
-                .build();
-        // Opcional: Imprimir el stacktrace en consola para que tú lo veas
-        ex.printStackTrace();
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<ErrorResponse> handleGeneral(Exception e, HttpServletRequest request) {
+        log.error("Error no controlado: ", e); // Importante loguear el stacktrace aquí
+        return buildResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Ocurrió un error interno inesperado. Contacte a soporte.",
+                request
+        );
+    }
+
+    private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message, HttpServletRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                status.value(),
+                status.getReasonPhrase(),
+                message,
+                request.getRequestURI()
+        );
+        return new ResponseEntity<>(errorResponse, status);
     }
 }
