@@ -35,5 +35,18 @@ spring:
       liquibase: INFO
 
 app:
-  security:
-    client-id: ${KEYCLOAK_CLIENT_ID:siim-frontend}
+  keycloak:
+    admin:
+      # URL interna si ms-security y keycloak están en la misma red Docker
+      server-url: ${KEYCLOAK_SERVER_URL:http://keycloak:8080}
+      realm: ${KEYCLOAK_REALM:tuxtepec-gob}
+      client-id: ${KEYCLOAK_CLIENT_ID_SECURITY:ms-security}
+      # Este secreto se obtiene de la consola de Keycloak -> Clients -> ms-security -> Credentials
+      client-secret: ${KEYCLOAK_CLIENT_SECRET:tu_secreto_generado_en_consola}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/} # Apunta a ms-discovery
+  instance:
+    prefer-ip-address: true # Vital para Docker
