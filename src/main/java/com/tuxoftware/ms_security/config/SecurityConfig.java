@@ -1,5 +1,6 @@
 package com.tuxoftware.ms_security.config;
 
+import jakarta.ws.rs.HttpMethod;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +32,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults()) // Importante para permitir CORS si el Gateway no lo maneja
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
                         .requestMatchers("/api/v1/users/**").hasAnyRole("REALM-ADMIN", "SUPER-ADMIN")
                         .anyRequest().authenticated()
                 )
