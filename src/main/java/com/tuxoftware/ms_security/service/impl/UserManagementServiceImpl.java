@@ -1,6 +1,8 @@
 package com.tuxoftware.ms_security.service.impl;
 
 import com.tuxoftware.ms_security.dto.request.CreateUser;
+import com.tuxoftware.ms_security.dto.response.PagedResponse;
+import com.tuxoftware.ms_security.dto.response.UserResponse;
 import com.tuxoftware.ms_security.service.UserManagementService;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
@@ -18,8 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -90,6 +92,95 @@ public class UserManagementServiceImpl implements UserManagementService {
             rollbackUserCreation(realmResource, createdUserId);
             throw e; // Relanzamos para que el Controller se entere
         }
+    }
+
+    /**
+     * Lista usuarios con paginación y búsqueda opcional.
+     */
+    @Override
+    public PagedResponse<UserResponse> listUsers(String search, int page, int size) {
+        RealmResource realmResource = keycloak.realm(realm);
+        int firstResult = page * size;
+
+        // 1. Obtener conteo total (para paginación correcta en frontend)
+        // Keycloak API count() soporta filtro por search
+        long total = realmResource.users().count(search);
+
+        // 2. Obtener lista paginada
+        // search: busca en username, email, firstName, lastName
+        List<UserRepresentation> keycloakUsers = realmResource.users()
+                .search(search, firstResult, size);
+
+        // 3. Mapear a DTO
+        List<UserResponse> content = keycloakUsers.stream()
+                .map(this::toUserResponse)
+                .toList();
+
+        return new PagedResponse<>(content, total, page, size);
+    }
+
+    /**
+     * Habilita o deshabilita un usuario.
+     */
+    @Override
+    public void updateUserStatus(String userId, boolean enabled) {
+        UserResource userResource = getUserResource(userId);
+        UserRepresentation user = userResource.toRepresentation();
+
+        // Optimización: Si ya tiene el estado deseado, no hacer nada
+        if (user.isEnabled() == enabled) return;
+
+        user.setEnabled(enabled);
+        userResource.update(user);
+
+        if (!enabled) {
+            // CRÍTICO: Si se deshabilita, forzar cierre de sesiones activas (Refresh Tokens)
+            userResource.logout();
+            log.info("Usuario {} deshabilitado y sesiones cerradas.", userId);
+        } else {
+            log.info("Usuario {} habilitado.", userId);
+        }
+    }
+
+    /**
+     * Resetea la contraseña (Admin override).
+     */
+    @Override
+    public void resetPassword(String userId, String newPassword) {
+        UserResource userResource = getUserResource(userId);
+
+        CredentialRepresentation cred = new CredentialRepresentation();
+        cred.setType(CredentialRepresentation.PASSWORD);
+        cred.setValue(newPassword);
+        cred.setTemporary(true); // Obligar a cambiarla en el próximo login
+
+        userResource.resetPassword(cred);
+        log.info("Contraseña reseteada para usuario {}", userId);
+    }
+
+    // --- Helpers ---
+
+    private UserResource getUserResource(String userId) {
+        try {
+            UserResource resource = keycloak.realm(realm).users().get(userId);
+            // Keycloak client a veces no lanza 404 en el get() hasta que lo llamas
+            resource.toRepresentation();
+            return resource;
+        } catch (NotFoundException e) {
+            throw new NotFoundException("Usuario no encontrado con ID: " + userId);
+        }
+    }
+
+    private UserResponse toUserResponse(UserRepresentation u) {
+        return new UserResponse(
+                u.getId(),
+                u.getUsername(),
+                u.getEmail(),
+                u.getFirstName(),
+                u.getLastName(),
+                Boolean.TRUE.equals(u.isEnabled()), // Null-safe check
+                Optional.ofNullable(u.getCreatedTimestamp()).orElse(0L)
+        );
     }
 
     /**
