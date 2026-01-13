@@ -1,5 +1,6 @@
 package com.tuxoftware.ms_security.service.impl;
 
+import com.tuxoftware.ms_security.dto.UserProfileDTO;
 import com.tuxoftware.ms_security.dto.request.CreateUser;
 import com.tuxoftware.ms_security.dto.response.PagedResponse;
 import com.tuxoftware.ms_security.dto.response.UserResponse;
@@ -17,11 +18,10 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -92,6 +92,40 @@ public class UserManagementServiceImpl implements UserManagementService {
             rollbackUserCreation(realmResource, createdUserId);
             throw e; // Relanzamos para que el Controller se entere
         }
+    }
+
+    /**
+     * Obtiene el perfil fresco desde Keycloak usando el UUID.
+     */
+    @Override
+    public UserProfileDTO getUserProfile(String userId, Jwt jwt) { // <--- Agregamos JWT
+
+        // 1. Obtenemos datos frescos de Keycloak (Estado, Nombre, Email, Password change, etc)
+        UserRepresentation u = getUserResource(userId).toRepresentation();
+
+        // 2. Preparamos los atributos
+        Map<String, List<String>> finalAttributes = new HashMap<>();
+
+        // A. Agregamos los atributos que vengan de Keycloak (si existen)
+        if (u.getAttributes() != null) {
+            finalAttributes.putAll(u.getAttributes());
+        }
+
+        // B. ENRIQUECIMIENTO: Extraemos 'municipio_id' del Token si Keycloak no lo trajo
+        if (!finalAttributes.containsKey("municipio_id") && jwt.hasClaim("municipio_id")) {
+            String municipioId = jwt.getClaimAsString("municipio_id");
+            finalAttributes.put("municipio_id", List.of(municipioId));
+        }
+
+        return new UserProfileDTO(
+                u.getId(),
+                u.getUsername(),
+                u.getEmail(),
+                u.getFirstName(),
+                u.getLastName(),
+                Boolean.TRUE.equals(u.isEnabled()),
+                finalAttributes // Retornamos el mapa combinado
+        );
     }
 
     /**

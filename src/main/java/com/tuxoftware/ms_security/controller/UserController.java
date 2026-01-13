@@ -1,5 +1,6 @@
 package com.tuxoftware.ms_security.controller;
 
+import com.tuxoftware.ms_security.dto.UserProfileDTO;
 import com.tuxoftware.ms_security.dto.request.CreateUser;
 import com.tuxoftware.ms_security.dto.request.ResetPasswordRequest;
 import com.tuxoftware.ms_security.dto.request.UpdateStatusRequest;
@@ -10,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -17,16 +20,24 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('REALM-ADMIN')")
+@PreAuthorize("isAuthenticated()")
 public class UserController {
 
     private final UserManagementService userService;
 
     @PostMapping
+    @PreAuthorize("hasRole('REALM-ADMIN')")
     public ResponseEntity<Map<String, String>> createUser(@RequestBody CreateUser request) {
         String userId = userService.createUser(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("userId", userId, "message", "Usuario creado exitosamente"));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserProfileDTO> getMyProfile(@AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getSubject();
+        UserProfileDTO profile = userService.getUserProfile(userId, jwt);
+        return ResponseEntity.ok(profile);
     }
 
     @GetMapping
